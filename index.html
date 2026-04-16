@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mi CRM Inteligente</title>
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            text-align: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        input, select, button {
+            width: 90%;
+            margin: 5px;
+            padding: 10px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        li {
+            list-style: none;
+            background: #eee;
+            margin: 10px 0;
+            padding: 10px;
+        }
+
+        .nuevo { background: #d4edda; }
+        .interesado { background: #fff3cd; }
+        .comprado { background: #cce5ff; }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Mi CRM Inteligente 🤖</h1>
+
+    <input type="text" id="nombre" placeholder="Nombre">
+    <input type="text" id="numero" placeholder="Número">
+
+    <select id="estado">
+        <option value="nuevo">Nuevo</option>
+        <option value="interesado">Interesado</option>
+        <option value="comprado">Comprado</option>
+    </select>
+
+    <button onclick="guardarCliente()">Guardar Cliente</button>
+
+    <h2>Buscar</h2>
+    <input type="text" id="busqueda" placeholder="Buscar..." onkeyup="filtrarClientes()">
+
+    <h2>Clientes</h2>
+    <ul id="listaClientes"></ul>
+</div>
+
+<script>
+let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+let editandoIndex = null;
+
+mostrarClientes();
+
+// ================= CRM =================
+function guardarCliente() {
+    let nombre = document.getElementById("nombre").value;
+    let numero = document.getElementById("numero").value;
+    let estado = document.getElementById("estado").value;
+
+    if (editandoIndex !== null) {
+        clientes[editandoIndex] = { nombre, numero, estado };
+        editandoIndex = null;
+    } else {
+        clientes.push({ nombre, numero, estado });
+    }
+
+    localStorage.setItem("clientes", JSON.stringify(clientes));
+    limpiarInputs();
+    mostrarClientes();
+}
+
+function mostrarClientes(listaFiltrada = clientes) {
+    let lista = document.getElementById("listaClientes");
+    lista.innerHTML = "";
+
+    listaFiltrada.forEach((c, index) => {
+        let li = document.createElement("li");
+        li.className = c.estado;
+
+        li.innerHTML = `
+            <strong>${c.nombre}</strong><br>
+            ${c.numero}<br>
+            Estado: ${c.estado}<br>
+
+            <button onclick="enviarWhatsApp(${index})">Responder 🤖</button>
+            <button onclick="editarCliente(${index})">Editar</button>
+            <button onclick="eliminarCliente(${index})">Eliminar</button>
+        `;
+        lista.appendChild(li);
+    });
+}
+
+function filtrarClientes() {
+    let texto = document.getElementById("busqueda").value.toLowerCase();
+
+    let filtrados = clientes.filter(c =>
+        c.nombre.toLowerCase().includes(texto) ||
+        c.numero.includes(texto)
+    );
+
+    mostrarClientes(filtrados);
+}
+
+function editarCliente(index) {
+    let c = clientes[index];
+
+    document.getElementById("nombre").value = c.nombre;
+    document.getElementById("numero").value = c.numero;
+    document.getElementById("estado").value = c.estado;
+
+    editandoIndex = index;
+}
+
+function eliminarCliente(index) {
+    clientes.splice(index, 1);
+    localStorage.setItem("clientes", JSON.stringify(clientes));
+    mostrarClientes();
+}
+
+function limpiarInputs() {
+    document.getElementById("nombre").value = "";
+    document.getElementById("numero").value = "";
+    document.getElementById("estado").value = "nuevo";
+}
+
+// ================= IA SIMULADA =================
+function generarRespuesta(cliente) {
+    let estado = cliente.estado;
+
+    if (estado === "nuevo") {
+        return "Hola 👋, gracias por escribirnos. ¿Qué producto te interesa?";
+    }
+
+    if (estado === "interesado") {
+        return "Hola de nuevo 😊, te cuento más detalles del producto. ¿Quieres precio o envío?";
+    }
+
+    if (estado === "comprado") {
+        return "¡Gracias por tu compra! 🙌 Estamos atentos a cualquier duda.";
+    }
+
+    return "Hola 👋 ¿En qué podemos ayudarte?";
+}
+
+// ================= WHATSAPP =================
+function enviarWhatsApp(index) {
+    let cliente = clientes[index];
+    let numero = cliente.numero;
+
+    let mensaje = generarRespuesta(cliente);
+
+    let url = `https://wa.me/57${numero}?text=${encodeURIComponent(mensaje)}`;
+
+    window.open(url, "_blank");
+}
+
+// ================= PWA =================
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
